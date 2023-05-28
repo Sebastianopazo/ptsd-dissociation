@@ -27,6 +27,13 @@ The sourcecode of this project can be found here:
 
 A good description of the original sample used can be found here: <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8890535/>
 
+Originally, a total of 1,140 individuals were assessed for elegibility. Of them, 251 (22.0%) did not meet the enrolment criteria, and 668 (58.6%) declined to participate. Finally, 221 individuals were enrolled and randomized (19.4% of those screened). Almost all of them received their allocated intervention (n = 217, 98.2%), the same proportion in the experimental and control groups. One individual in each intervention arm dropped out immediately after randomization and before the intervention was implemented.
+
+In addition to the original 221 participants, a sample of 166 more participants were added (a second wave of recruitment).
+
+**[Here, We need to specify total recruited, total declined, and total excluded of the new sample]**
+
+
 A codebook document was created to describe variable codes and their meanings. It can be opened with the following link:
 
 
@@ -37,6 +44,8 @@ library("dplyr") # Used to provide extra functionalities (https://dplyr.tidyvers
 library("dataMaid")#Used for code book generation (https://CRAN.R-project.org/package=dataMaid)
 library("kableExtra") #To add extra formatting options (https://haozhu233.github.io/kableExtra/)
 library(ggplot2) #Required to create 'beautiful' plots (https://ggplot2.tidyverse.org/)
+library("consort") #Used to create CONSORT diagrams.
+
 
 remotes::install_github("jasp-stats/jaspTools")
 library(jaspTools)
@@ -102,6 +111,14 @@ db <- db %>% mutate(
       )
   )
 
+#Recode recruitment waves according to original names
+db <- db %>% mutate(
+    t0_sex=recode(
+      t0_sex,
+      `1`="Male",
+      `2`="Female",
+      )
+  )
 
 ## Enforce data types (according to each variable meaning)
 
@@ -118,16 +135,17 @@ db <- db %>%
 
 attr(db$t0_code, "label") <- "Specifies the participant's unique identifier."
 attr(db$t0_sex, "label") <- "Specifies the participant's sex at time 0."
-attr(db$t0_hospital, "label") <- "Specifies the hospital the participant belongs to.."
-attr(db$t0_sex, "label") <- "Specifies recruitment wave ."
+attr(db$t0_hospital, "label") <- "Specifies the hospital the participant belongs to."
+attr(db$t0_sex, "label") <- "Soecifies the participant sex."
+attr(db$t0_age, "label") <- "Soecifies the participant age"
 attr(db$t0_provider, "label") <- "Undergraduate psychology student who provided the participant's PFA-ABCDE intervention."
 attr(db$t0_recr_wave, "label") <- "The wave the participant was recruited on (two different points in time)."
-
+attr(db$group, "label") <- "Assigned group from original RCT study."
 
 db[db==""] <- NA #Replace empty strings with NA.
 
 
-# makeCodebook(db, file="codebook.Rmd", reportTitle="Codebook for PTSD Dissociation data", replace=TRUE, quiet=TRUE, openResult=FALSE)
+makeCodebook(db, file="codebook.Rmd", reportTitle="Codebook for PTSD Dissociation data", replace=TRUE, quiet=TRUE, openResult=FALSE)
 
 ```
 <button style="background-color: #6197d5; padding: 20px; color: white; font-size: 30px;" onclick="window.open('codebook.html')">Open Codebook</button>
@@ -147,10 +165,9 @@ ggplot(data=recr_wave_dt, aes(x=wave, y=freq, fill=wave)) +
       x="Recruitment Wave",
       y="Count",
       fill="WAVE",
-      caption=paste("N = ", sum(!is.na(db$t0_recr_wave))
+      caption=paste("N = ", sum(!is.na(db$t0_recr_wave)))
     ) + theme_minimal()
-
-
+    
 hospital_dt<- data.frame(table(db$t0_hospital))
 names(hospital_dt) <- c("hospital", "freq")
 
@@ -162,7 +179,7 @@ ggplot(data=hospital_dt, aes(x=hospital, y=freq, fill=hospital)) +
       x="Hospital",
       y="Count",
       fill="HOSPITAL",
-      caption=paste("N = ", sum(!is.na(db$t0_hospital))
+      caption=paste("N = ", sum(!is.na(db$t0_hospital)))
     ) + theme_minimal()
 
 
@@ -170,7 +187,7 @@ age_dt<- data.frame(table(db$t0_age))
 names(age_dt) <- c("age", "freq")
 
 ggplot(data=db, aes(x=t0_age, fill=t0_age)) +
-    geom_bar(stat="count") +
+    geom_bar(stat="count", fill="lightblue") +
     labs(
       title="Participant Age",
       x="Age",
@@ -179,6 +196,19 @@ ggplot(data=db, aes(x=t0_age, fill=t0_age)) +
       caption=paste("N = ", sum(!is.na(db$t0_age)))
     ) + theme_minimal()
 
+sex_dt<- data.frame(table(db$t0_sex))
+names(sex_dt) <- c("sex", "freq")
+
+ggplot(data=sex_dt, aes(x=sex, y=freq, fill=sex)) +
+    geom_bar(stat="identity") +
+      geom_text(aes(label=freq), position=position_dodge(width=0.9), vjust=-0.25) +
+    labs(
+      title="Participant Sex",
+      x="Sex",
+      y="Count",
+      fill="SEX",
+      caption=paste("N = ", sum(!is.na(db$t0_sex)))
+    ) + theme_minimal()
 
 
 ```
