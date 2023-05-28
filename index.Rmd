@@ -18,12 +18,14 @@ params:
 ---
 (This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document).
+The sourcecode of this project can be found here: 
+
+<https://github.com/Sebastianopazo/ptsd-dissociation>
 
 
 # Documentation
 
-A good description of the original sample used can be found here: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8890535/
+A good description of the original sample used can be found here: <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8890535/>
 
 A codebook document was created to describe variable codes and their meanings. It can be opened with the following link:
 
@@ -116,9 +118,10 @@ db <- db %>%
 
 attr(db$t0_code, "label") <- "Specifies the participant's unique identifier."
 attr(db$t0_sex, "label") <- "Specifies the participant's sex at time 0."
+attr(db$t0_hospital, "label") <- "Specifies the hospital the participant belongs to.."
 attr(db$t0_sex, "label") <- "Specifies recruitment wave ."
 attr(db$t0_provider, "label") <- "Undergraduate psychology student who provided the participant's PFA-ABCDE intervention."
-attr(db$t0_recr_wave, "label") <- "The wave the participant was recruited (two different points in time)."
+attr(db$t0_recr_wave, "label") <- "The wave the participant was recruited on (two different points in time)."
 
 
 db[db==""] <- NA #Replace empty strings with NA.
@@ -144,7 +147,7 @@ ggplot(data=recr_wave_dt, aes(x=wave, y=freq, fill=wave)) +
       x="Recruitment Wave",
       y="Count",
       fill="WAVE",
-      caption=paste("N = ", nrow(db))
+      caption=paste("N = ", sum(!is.na(db$t0_recr_wave))
     ) + theme_minimal()
 
 
@@ -159,7 +162,7 @@ ggplot(data=hospital_dt, aes(x=hospital, y=freq, fill=hospital)) +
       x="Hospital",
       y="Count",
       fill="HOSPITAL",
-      caption=paste("N = ", nrow(db))
+      caption=paste("N = ", sum(!is.na(db$t0_hospital))
     ) + theme_minimal()
 
 
@@ -173,7 +176,7 @@ ggplot(data=db, aes(x=t0_age, fill=t0_age)) +
       x="Age",
       y="Count",
       fill="AGE",
-      caption=paste("N = ", nrow(db))
+      caption=paste("N = ", sum(!is.na(db$t0_age)))
     ) + theme_minimal()
 
 
