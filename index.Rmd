@@ -1,0 +1,214 @@
+---
+title: "Dissociation and PTSD - Data Analysis"
+author: "Sebastián Opazo"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_collapsed: true
+    toc_depth: 3
+    toc_float: true 
+    number_sections: true
+    anchor_sections: true
+    theme: lumen
+    keep_md: false
+params:
+  output_file: "index.html"
+---
+(This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document).
+
+
+# Documentation
+
+A good description of the original sample used can be found here: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8890535/
+
+A codebook document was created to describe variable codes and their meanings. It can be opened with the following link:
+
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+
+library("data.table") #Required library to use data tables (better than data frames apparently, see https://www.analyticsvidhya.com/blog/2016/05/data-table-data-frame-work-large-data-sets/)
+library("dplyr") # Used to provide extra functionalities (https://dplyr.tidyverse.org/)
+library("dataMaid")#Used for code book generation (https://CRAN.R-project.org/package=dataMaid)
+library("kableExtra") #To add extra formatting options (https://haozhu233.github.io/kableExtra/)
+library(ggplot2) #Required to create 'beautiful' plots (https://ggplot2.tidyverse.org/)
+
+remotes::install_github("jasp-stats/jaspTools")
+library(jaspTools)
+
+#IMPORTING DATA ----
+db <- setDT(read.csv("./database/1808131054_PAP.csv"))
+
+
+#DATA CLEANUP ----
+
+#Rename columns with name errors
+db <- db %>% 
+  rename(
+    t0_recruit_date = t0_recuit_date
+    )
+
+#Recode provider numbers to hide identity
+db <- db %>% mutate(
+    t0_provider=recode(
+      t0_provider,
+      `Carol Perez`=0,
+      `Claudia Olguín`=1,
+      `Claudia Ruiz`=2,
+      `Constanza González`=3,
+      `Carol Perez`=4,
+      `Danka Dawson`=5,
+      `Ignacia Azócar`=6,
+      `Ignacia Fernández`=7,
+      `Ignacio García`=8,
+      `Isidora Rodríguez`=9,
+      `Javiera Rodríguez`=10,
+      `Joaquín Zamorano`=11,
+      `Macarena Segovia`=12,
+      `Magdalena Fernánde`=13,
+      `Montserrat Franco`=14,
+      `Paula Padilla`=15,
+      `Paulina Guajardo`=16,
+      `Silvina Moyano`=17,
+      `Simón Fercovic`=18,
+      `Sofía Astorga`=19,
+      `Stefanny Vicencio`=20,
+      )
+  )
+
+#Recode hospitals according to original names
+db <- db %>% mutate(
+    t0_hospital=recode(
+      t0_hospital,
+      `1`="Sótero del Río",
+      `2`="Barros Luco",
+      `3`="Padre Hurtado",
+      `4`="ACHS",
+      `5`="UC",
+      )
+  )
+
+#Recode recruitment waves according to original names
+db <- db %>% mutate(
+    t0_recr_wave=recode(
+      t0_recr_wave,
+      `1`="First",
+      `2`="Second",
+      )
+  )
+
+
+## Enforce data types (according to each variable meaning)
+
+db <- db %>% 
+    mutate_at("t0_sex", as.factor) %>%
+    mutate_at("t0_recr_wave", as.factor) %>%
+    mutate_at("t0_hospital", as.factor) %>%
+    mutate_at("group", as.factor) %>%
+    mutate_at("t0_recruit_date", as.Date, format = "%m/%d/%Y") %>%
+    mutate_at("t0_provider", as.factor)
+
+
+#Generate Code Book ----
+
+attr(db$t0_code, "label") <- "Specifies the participant's unique identifier."
+attr(db$t0_sex, "label") <- "Specifies the participant's sex at time 0."
+attr(db$t0_sex, "label") <- "Specifies recruitment wave ."
+attr(db$t0_provider, "label") <- "Undergraduate psychology student who provided the participant's PFA-ABCDE intervention."
+attr(db$t0_recr_wave, "label") <- "The wave the participant was recruited (two different points in time)."
+
+
+db[db==""] <- NA #Replace empty strings with NA.
+
+
+# makeCodebook(db, file="codebook.Rmd", reportTitle="Codebook for PTSD Dissociation data", replace=TRUE, quiet=TRUE, openResult=FALSE)
+
+```
+<button style="background-color: #6197d5; padding: 20px; color: white; font-size: 30px;" onclick="window.open('codebook.html')">Open Codebook</button>
+
+# Descriptives
+
+```{r descriptives, echo=FALSE,  warning=FALSE, message=FALSE}
+
+recr_wave_dt<- data.frame(table(db$t0_recr_wave))
+names(recr_wave_dt) <- c("wave", "freq")
+
+ggplot(data=recr_wave_dt, aes(x=wave, y=freq, fill=wave)) +
+    geom_bar(stat="identity") +
+    geom_text(aes(label=freq), position=position_dodge(width=0.9), vjust=-0.25) +
+    labs(
+      title="Participant Recruitment Wave",
+      x="Recruitment Wave",
+      y="Count",
+      fill="WAVE",
+      caption=paste("N = ", nrow(db))
+    ) + theme_minimal()
+
+
+hospital_dt<- data.frame(table(db$t0_hospital))
+names(hospital_dt) <- c("hospital", "freq")
+
+ggplot(data=hospital_dt, aes(x=hospital, y=freq, fill=hospital)) +
+    geom_bar(stat="identity") +
+      geom_text(aes(label=freq), position=position_dodge(width=0.9), vjust=-0.25) +
+    labs(
+      title="Participant Hospital",
+      x="Hospital",
+      y="Count",
+      fill="HOSPITAL",
+      caption=paste("N = ", nrow(db))
+    ) + theme_minimal()
+
+
+age_dt<- data.frame(table(db$t0_age))
+names(age_dt) <- c("age", "freq")
+
+ggplot(data=db, aes(x=t0_age, fill=t0_age)) +
+    geom_bar(stat="count") +
+    labs(
+      title="Participant Age",
+      x="Age",
+      y="Count",
+      fill="AGE",
+      caption=paste("N = ", nrow(db))
+    ) + theme_minimal()
+
+
+
+```
+
+# Mediation Analysis
+
+```{r mediation, echo=FALSE,  warning=FALSE, message=FALSE}
+
+# jaspSem::MediationAnalysis(
+#           data = NULL,
+#           version = "0.17",
+#           bootstrapCiType = "percentileBiasCorrected",
+#           bootstrapSamples = 1000,
+#           ciLevel = 0.95,
+#           confounds = list(),
+#           emulation = "lavaan",
+#           errorCalculationMethod = "bootstrap",
+#           estimator = "default",
+#           mediators = "pdeq",
+#           naAction = "fiml",
+#           outcomes = "t1_pcl",
+#           pathCoefficient = TRUE,
+#           pathPlot = TRUE,
+#           pathPlotLegend = FALSE,
+#           pathPlotParameter = TRUE,
+#           plotHeight = 320,
+#           plotWidth = 480,
+#           predictors = "tq",
+#           rSquared = FALSE,
+#           residualCovariance = TRUE,
+#           standardizedEstimate = FALSE,
+#           syntax = FALSE,
+#           totalIndirectEffect = TRUE
+# )
+
+```
